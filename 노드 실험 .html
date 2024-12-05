@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Graph with Aside</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+ 
+
+
+
+
+
+</head>
+<body>
+
+
+<!-- 헤더 -->
+    <header class="navbar">
+        <nav class="menu">
+            <div class="logo">
+                <a href="./홈화면.html">Deep AI</a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="./노드 실험 .html">Visualization</a></li>
+                <li><a href="#posters">Posters</a></li>
+                <li><a href="#identity">Identity</a></li>
+                <li><a href="#info">Info</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#index">Index</a></li>
+            </ul>
+        </nav>
+    </header>
+
+
+<!-- Add Node 버튼 추가 -->
+    <button id="addNodeButton" style="
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        z-index: 102; 
+        padding: 10px 20px; 
+        background-color: #007aff; 
+        color: #fff; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        border: none; 
+        font-size: 14px;">
+    Add Node
+</button>
+
+    <svg></svg>
+    <!-- Modal Overlay -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-header">Node Information</div>
+        <div class="modal-body" id="modalBody"></div>
+        <button class="modal-open" id="modalOpen">Open</button>
+        <button class="modal-close" id="modalClose">Close</button>
+    </div>
+
+
+
+
+    
+   <!-- Save 버튼이 포함된 Aside 패널 -->
+<aside class="aside-panel" id="asidePanel">
+
+    <div class="aside-content" id="asideContent">
+        <h3>Edit Node</h3>
+        <!-- 노드 이름 -->
+        <div>
+            <label for="nodeName" style="font-weight: bold; margin-bottom: 5px; display: block;">Name:</label>
+            <input id="nodeName" type="text" placeholder="Enter node name..." />
+        </div>
+        <!-- 노드 내용 -->
+        <div style="margin-top: 20px;">
+            <label for="nodeContent" style="font-weight: bold; margin-bottom: 5px; display: block;">Content:</label>
+            <textarea id="nodeContent" placeholder="Write your notes here..."></textarea>
+        </div>
+        <!-- 노드 태그 -->
+        <div style="margin-top: 20px;">
+            <label for="nodeTags" style="font-weight: bold; margin-bottom: 5px; display: block;">Tags (comma-separated):</label>
+            <input id="nodeTags" type="text" placeholder="e.g., tag1, tag2, tag3" />
+        </div>
+    
+    </div>
+    
+    <button class="move-btn"> Move to AI Node </button>
+
+    <div class="button-container">
+        <button class="aside-reset" id="asideReset">reset</button>
+        <button class="aside-close" id="asideClose">Close</button>
+        
+    </div>
+
+
+</aside>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <script>
+        const svg = d3.select("svg");
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        svg.attr("width", width).attr("height", height);
+        
+        
+     
+
+        // Nodes and links data
+        const graph = {
+            nodes: Array.from({ length: 20 }, (_, i) => ({
+                id: `Node ${i + 1}`,
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: Math.random() * 2 - 1,
+                vy: Math.random() * 2 - 1,
+            })),
+            links: Array.from({ length: 20 }, () => ({
+                source: `Node ${Math.floor(Math.random() * 20) + 1}`,
+                target: `Node ${Math.floor(Math.random() * 20) + 1}`,
+            })),
+        };
+
+        const simulation = d3.forceSimulation(graph.nodes)
+    .force("link", d3.forceLink(graph.links)
+        .id(d => d.id)
+        .distance(50) // 연결된 노드 간 거리 설정
+    )
+    .force("charge", d3.forceManyBody()
+        .strength(-50) // 자유롭게 퍼질 수 있도록 설정
+    )
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("x", d3.forceX(width / 2).strength(0.01)) // 약한 중심으로 끌림
+    .force("y", d3.forceY(height / 2).strength(0.01)); // 약한 중심으로 끌림
+
+// 지속적인 움직임을 위한 랜덤 속도 추가
+function applyRandomMotion() {
+    graph.nodes.forEach(node => {
+        // 노드의 속도에 랜덤한 값을 추가
+        node.vx += (Math.random() - 0.5) * 0.1; // -0.05 ~ 0.05 사이의 랜덤 값
+        node.vy += (Math.random() - 0.5) * 0.1;
+    });
+}
+
+// 매 프레임마다 랜덤 속도를 추가
+d3.interval(() => {
+    applyRandomMotion();
+    simulation.alpha(0.05).restart(); // 알파 값을 낮게 설정하여 움직임 유지
+}, 1); // 300ms 간격으로 움직임 추가
+
+// Tick 함수
+function ticked() {
+    link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+    node
+        .attr("cx", d => {
+            d.x += d.vx;
+            if (d.x < 10 || d.x > width - 10) d.vx *= -1;
+            return Math.max(10, Math.min(width - 10, d.x));
+        })
+        .attr("cy", d => {
+            d.y += d.vy;
+            if (d.y < 10 || d.y > height - 10) d.vy *= -1;
+            return Math.max(10, Math.min(height - 10, d.y));
+        });
+
+    text
+        .attr("x", d => d.x)
+        .attr("y", d => d.y);
+}
+
+simulation.on("tick", ticked);
+
+
+        const link = svg.append("g")
+            .selectAll("line")
+            .data(graph.links)
+            .enter().append("line")
+            .attr("stroke", "#aaa");
+
+        const node = svg.append("g")
+            .selectAll("circle")
+            .data(graph.nodes)
+            .enter().append("circle")
+            .attr("r", 10)
+            .attr("fill", "white")
+            .on("mouseover", function () {
+                d3.select(this)
+                    .attr("fill", "url(#gradient)") // Apply gradient
+                    .attr("r", 15); // Increase radius
+            })
+            .on("mouseout", function () {
+                d3.select(this)
+                    .attr("fill", "white") // Reset fill
+                    .attr("r", 10); // Reset radius
+            })
+            .on("click", function (event, d) {
+                showModal(d);
+            })
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        const text = svg.append("g")
+            .selectAll("text")
+            .data(graph.nodes)
+            .enter().append("text")
+            .attr("dy", -15)
+            .attr("fill", "white")
+            .text(d => d.id);
+
+        function ticked() {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("cx", d => {
+                    d.x += d.vx;
+                    if (d.x < 10 || d.x > width - 10) d.vx *= -1;
+                    return Math.max(10, Math.min(width - 10, d.x));
+                })
+                .attr("cy", d => {
+                    d.y += d.vy;
+                    if (d.y < 10 || d.y > height - 10) d.vy *= -1;
+                    return Math.max(10, Math.min(height - 10, d.y));
+                });
+
+            text
+                .attr("x", d => d.x)
+                .attr("y", d => d.y);
+        }
+
+        simulation.on("tick", ticked);
+
+        // Window resize event
+        window.addEventListener("resize", () => {
+            const newWidth = window.innerWidth;
+            const newHeight = window.innerHeight;
+
+            svg.attr("width", newWidth).attr("height", newHeight);
+
+            // Update simulation center force
+            simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2));
+
+            // Update nodes to stay within new bounds
+            graph.nodes.forEach(node => {
+                node.x = Math.max(10, Math.min(newWidth - 10, node.x));
+                node.y = Math.max(10, Math.min(newHeight - 10, node.y));
+            });
+            simulation.alpha(1).restart(); // Restart simulation to adjust layout
+        }); 
+
+     // Modal handling
+const modal = document.getElementById("modal");
+const modalBody = document.getElementById("modalBody");
+const modalOverlay = document.getElementById("modalOverlay");
+const modalClose = document.getElementById("modalClose");
+const modalOpen = document.getElementById("modalOpen");
+const asidePanel = document.getElementById("asidePanel");
+const asideClose = document.getElementById("asideClose");
+
+function showModal(nodeData) {
+    modalBody.textContent = `You clicked on ${nodeData.id}`;
+    modal.style.display = "block";
+    modalOverlay.style.display = "block";
+}
+
+function hideModal() {
+    modal.style.display = "none";
+    modalOverlay.style.display = "none";
+}
+
+// 모달 Open 버튼 클릭 시 모달 닫히고 Aside 패널 열림 (수정된 부분)
+modalOpen.addEventListener("click", () => {
+    asidePanel.style.display = "block"; // Aside 패널 열기
+    modal.style.display = "none";      // 모달 닫기
+    modalOverlay.style.display = "none"; // 오버레이 닫기
+});
+
+modalClose.addEventListener("click", hideModal);
+modalOverlay.addEventListener("click", hideModal);
+
+asideClose.addEventListener("click", () => {
+    asidePanel.style.display = "none";
+});
+
+
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        const addNodeButton = document.getElementById("addNodeButton"); // Add Node 버튼 가져오기
+
+// Add Node 버튼 클릭 이벤트 리스너 추가
+addNodeButton.addEventListener("click", () => {
+    const newNode = {
+        id: `Node ${graph.nodes.length + 1}`, // 새로운 노드 ID
+        x: Math.random() * width,            // 랜덤 X 좌표
+        y: Math.random() * height,           // 랜덤 Y 좌표
+        vx: Math.random() * 2 - 1,           // 초기 속도
+        vy: Math.random() * 2 - 1,
+    };
+
+  
+});
+
+// 노드 데이터에 content와 tags 필드 추가
+graph.nodes.forEach(node => {
+    node.content = ""; // 노드의 기본 글
+    node.tags = [];    // 노드의 기본 태그
+});
+
+// 노드 클릭 시 모달 열기
+function showModal(nodeData) {
+    modal.style.display = "block";
+    modalOverlay.style.display = "block";
+
+    modalBody.innerHTML = `
+        <div><strong>${nodeData.id}</strong></div>
+        <div>Content: ${nodeData.content || "No content yet."}</div>
+        <div>Tags: ${nodeData.tags.length > 0 ? nodeData.tags.join(", ") : "No tags yet."}</div>
+    `;
+
+    // 모달의 Open 버튼에 사이드 패널 열기 기능 연결
+    modalOpen.onclick = () => {
+        showAside(nodeData); // 사이드 패널 열기
+        hideModal(); // 모달 닫기
+    };
+}
+
+// 사이드 패널 열기 함수
+function showAside(nodeData) {
+    asidePanel.style.display = "block";
+
+    const asideContent = document.getElementById("asideContent");
+    asideContent.innerHTML = `
+        <h3>${nodeData.id}</h3>
+        <textarea id="nodeContent" placeholder="Write your notes here..." style="width: 100%; height: 100px;">${nodeData.content}</textarea>
+        <div style="margin-top: 10px;">
+            <label for="nodeTags">Tags (comma-separated):</label>
+            <input id="nodeTags" type="text" style="width: 100%;" value="${nodeData.tags.join(", ")}">
+        </div>
+        <button id="saveNodeData" style="margin-top: 10px; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer;">Save</button>
+    `;
+
+    // 데이터 저장 버튼 이벤트 리스너
+    document.getElementById("saveNodeData").addEventListener("click", () => {
+        const content = document.getElementById("nodeContent").value;
+        const tags = document.getElementById("nodeTags").value.split(",").map(tag => tag.trim());
+        nodeData.content = content;
+        nodeData.tags = tags;
+
+        // 저장 후 사이드 패널 닫기
+        asidePanel.style.display = "none";
+    });
+}
+
+// 모달 닫기
+function hideModal() {
+    modal.style.display = "none";
+    modalOverlay.style.display = "none";
+}
+
+// 모달 닫기 버튼 및 오버레이 클릭 연결
+modalClose.addEventListener("click", hideModal);
+modalOverlay.addEventListener("click", hideModal);
+
+// 사이드 패널 닫기 버튼
+asideClose.addEventListener("click", () => {
+    asidePanel.style.display = "none";
+});
+
+// 사이드 패널 열기 함수
+function showAside(nodeData) {
+    asidePanel.style.display = "block";
+
+    const asideContent = document.getElementById("asideContent");
+    asideContent.innerHTML = `
+        <h3>Edit Node</h3>
+        <div>
+            <label for="nodeName">Name:</label>
+            <input id="nodeName" type="text" style="width: 100%; margin-bottom: 10px;" value="${nodeData.id}">
+        </div>
+        <textarea id="nodeContent" placeholder="Write your notes here..." style="width: 100%; height: 540px;">${nodeData.content}</textarea>
+        <div style="margin-top: 10px;">
+            <label for="nodeTags">Tags (comma-separated):</label>
+            <input id="nodeTags" type="text" style="width: 100%;" value="${nodeData.tags.join(", ")}">
+        </div>
+        <button id="saveNodeData" 
+        style="
+            
+            width: 100%;
+             max-width: 600px;
+            margin-top: 24px; 
+            padding: 12px; 
+            background-color: #2E372F; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer;">Save</button>
+    `;
+
+    // Save 버튼 가져오기
+        const saveButton = document.getElementById("saveNodeData");
+
+    // 호버 시 색상 변경
+        saveButton.addEventListener("mouseover", () => {
+        saveButton.style.backgroundColor = "#04DB1A"; // 호버 시 색상
+});
+
+        saveButton.addEventListener("mouseout", () => {
+        saveButton.style.backgroundColor = "#2E372F"; // 원래 색상
+});
+
+
+    // 데이터 저장 버튼 이벤트 리스너
+    document.getElementById("saveNodeData").addEventListener("click", () => {
+        // 이름, 내용, 태그 업데이트
+        const newName = document.getElementById("nodeName").value.trim();
+        const content = document.getElementById("nodeContent").value;
+        const tags = document.getElementById("nodeTags").value.split(",").map(tag => tag.trim());
+
+        // 노드 데이터 업데이트
+        nodeData.id = newName || nodeData.id; // 빈 값 방지
+        nodeData.content = content;
+        nodeData.tags = tags;
+
+        // 텍스트 요소 업데이트
+        const nodeText = text.filter(d => d === nodeData);
+        nodeText.text(d => d.id);
+
+        // 사이드 패널 닫기
+        asidePanel.style.display = "none";
+    });
+}
+
+// Reset 버튼 로직
+    document.getElementById("asideReset").addEventListener("click", () => {
+    document.getElementById("nodeName").value = ""; // 이름 초기화
+    document.getElementById("nodeContent").value = ""; // 내용 초기화
+    document.getElementById("nodeTags").value = ""; // 태그 초기화
+});
+
+// window의 클릭 이벤트 추가
+window.addEventListener("click", (event) => {
+    const isClickInsideAside = asidePanel.contains(event.target); // aside 내부 클릭 여부 확인
+    const isClickInsideModal = modal.contains(event.target); // modal 내부 클릭 여부 확인
+
+    if (!isClickInsideAside && !isClickInsideModal) {
+        asidePanel.style.display = "none"; // aside 창 닫기
+    }
+});
+
+// 사이드 패널 클릭 이벤트는 이벤트 전파를 막기 위해 추가
+asidePanel.addEventListener("click", (event) => {
+    event.stopPropagation(); // 이벤트 전파 방지
+});
+
+// 모달 클릭 이벤트도 전파 방지
+modal.addEventListener("click", (event) => {
+    event.stopPropagation(); // 이벤트 전파 방지
+});
+
+
+
+    </script>
+</body>
+</html>

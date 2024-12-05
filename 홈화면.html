@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern ChatGPT UI</title>
+  <link rel="stylesheet" href="styles(1).css">
+</head>
+<body>
+
+
+<!-- 헤더 -->
+<header class="navbar">
+    <nav class="menu">
+        <div class="logo">
+            <a href="./홈화면.html">Deep AI</a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="./노드 실험 .html">Visualization</a></li>
+            <li><a href="#posters">Posters</a></li>
+            <li><a href="#identity">Identity</a></li>
+            <li><a href="#info">Info</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#index">Index</a></li>
+        </ul>
+    </nav>
+</header>
+
+
+  <div class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2 class="logo">Deep AI</h2>
+        </div>
+        <button class="new-chat-btn">+ New Chat</button>
+      <ul class="chat-list">
+        <li class="chat-item">Recent Chat 1</li>
+        <li class="chat-item">Recent Chat 2</li>
+        <li class="chat-item">Older Chat</li>
+      </ul>
+        
+        <ul class="sidebar-menu">
+          <li class="menu-item">
+            <span class="menu-icon">📌</span>
+            <span class="menu-text">빠른 메모</span>
+            
+            
+          </li>
+          <li class="menu-item">
+            <span class="menu-icon">✔️</span>
+            <span class="menu-text">작업 목록</span>
+          </li>
+          <li class="menu-item">
+            <span class="menu-icon">📅</span>
+            <span class="menu-text">캘린더</span>
+          </li>
+          <li class="menu-item">
+            <span class="menu-icon">⚙️</span>
+            <span class="menu-text">설정</span>
+          </li>
+          <li class="menu-item">
+            <span class="menu-icon">📂</span>
+            <span class="menu-text">템플릿</span>
+          </li>
+          <li class="menu-item">
+            <span class="menu-icon">🗑️</span>
+            <span class="menu-text">휴지통</span>
+          </li>
+          <li class="menu-item">
+            <span class="menu-icon">❓</span>
+            <span class="menu-text">도움말</span>
+          </li>
+        </ul>
+        
+        <footer class="sidebar-footer">
+          <p>© 2024 Deep AI</p>
+        </footer>
+      </aside>
+      
+
+    <!-- Main Chat Area -->
+    <main class="chat-area">
+      <header class="chat-header">
+        <h3>Welcome to Deep AI</h3>
+      </header>
+      <div class="chat-window">
+        <div class="chat-message user-message">
+          <p>Hello, how are you?</p>
+        </div>
+        <div class="chat-message bot-message">
+          <p>I'm great! How can I assist you today?</p>
+        </div>
+      </div>
+
+      <footer class="chat-input">
+        <div class="input-container">
+          <button class="attachment-button" id="attachmentButton">📎</button>
+          <input type="file" id="fileInput" style="display: none;" />
+          <button class="emoji-button">🌐</button>
+          <input type="text" id="messageInput" placeholder="메시지 창을 입력하세요..." />
+          <button id="sendButton" class="send-button">⮑</button>
+        </div>
+      </footer>
+      
+      
+    </main>
+  </div>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+   // DOM 요소 선택
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+const chatWindow = document.querySelector('.chat-window');
+
+// 메시지를 전송하는 함수
+function sendMessage() {
+  const message = messageInput.value.trim(); // 입력값 가져오기 (앞뒤 공백 제거)
+  
+  if (message === '') return; // 입력값이 비어 있으면 함수 종료
+
+  // 새로운 메시지 요소 생성
+  const userMessage = document.createElement('div');
+  userMessage.classList.add('chat-message', 'user-message');
+  userMessage.innerHTML = `<p>${message}</p>`;
+
+  // 메시지를 채팅 창에 추가
+  chatWindow.appendChild(userMessage);
+
+  // 입력창 초기화
+  messageInput.value = '';
+
+  // 채팅 창을 스크롤 맨 아래로 이동
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  // AI 응답 (임시)
+  simulateBotResponse(message);
+}
+
+// 엔터 키 이벤트 추가
+messageInput.addEventListener('keypress', (event) => {
+  if (event.key === 'Enter') {
+    sendMessage();
+  }
+});
+
+// 버튼 클릭 이벤트 추가
+sendButton.addEventListener('click', sendMessage);
+
+// 임시 AI 응답 함수
+function simulateBotResponse(userMessage) {
+  setTimeout(() => {
+    const botMessage = document.createElement('div');
+    botMessage.classList.add('chat-message', 'bot-message');
+    botMessage.innerHTML = `<p>AI Response to: "${userMessage}"</p>`;
+
+    // 메시지를 채팅 창에 추가
+    chatWindow.appendChild(botMessage);
+
+    // 채팅 창을 스크롤 맨 아래로 이동
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }, 1000); // 1초 딜레이
+}
+
+// DOM 요소 선택
+const attachmentButton = document.getElementById('attachmentButton');
+const fileInput = document.getElementById('fileInput');
+
+// 첨부 버튼 클릭 시 파일 선택 창 열기
+attachmentButton.addEventListener('click', () => {
+  fileInput.click(); // 숨겨진 파일 입력 요소를 클릭
+});
+
+// 파일 선택 시 동작 추가
+fileInput.addEventListener('change', (event) => {
+  const selectedFile = event.target.files[0]; // 선택된 파일 정보
+  if (selectedFile) {
+    console.log(`파일이 선택되었습니다: ${selectedFile.name}`);
+    alert(`파일이 선택되었습니다: ${selectedFile.name}`);
+    // 추가 동작: 선택된 파일을 업로드하거나 메시지 창에 표시
+  }
+  if (selectedFile.size > 5 * 1024 * 1024) { // 5MB 제한
+  alert('파일 크기는 5MB를 초과할 수 없습니다.');
+  return;
+}
+});
+
+
+</script>
+
+</body>
+</html>
